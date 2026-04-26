@@ -2,7 +2,8 @@ import { z } from 'zod';
 
 export const IotWebhookBodySchema = z
   .object({
-    shipmentId: z.string().min(1),
+    sensorId: z.string().min(1),
+    shipmentId: z.string().min(1).optional(),
 
     temperature: z.coerce.number(),
     humidity: z.coerce.number(),

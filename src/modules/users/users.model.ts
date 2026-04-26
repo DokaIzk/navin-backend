@@ -1,5 +1,6 @@
 import mongoose, { type InferSchemaType } from 'mongoose';
 import bcrypt from 'bcrypt';
+import { isoDatePlugin } from '../../shared/plugins/isoDatePlugin.js';
 
 export enum OrganizationType {
   ENTERPRISE = 'ENTERPRISE',
@@ -13,6 +14,8 @@ const OrganizationSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+OrganizationSchema.plugin(isoDatePlugin);
 
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
@@ -31,8 +34,19 @@ const UserSchema = new mongoose.Schema(
     organizationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization', required: true },
     walletAddress: { type: String, required: false },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: {
+      transform: (_doc, ret) => {
+        const result = ret as any;
+        delete result.passwordHash;
+        return result;
+      },
+    },
+  }
 );
+
+UserSchema.plugin(isoDatePlugin);
 
 // Pre-save hook to hash password
 UserSchema.pre('save', async function (next) {
@@ -42,13 +56,6 @@ UserSchema.pre('save', async function (next) {
   }
   next();
 });
-
-// Override toJSON to hide passwordHash
-UserSchema.methods.toJSON = function () {
-  const obj = this.toObject();
-  delete obj.passwordHash;
-  return obj;
-};
 
 export type Organization = InferSchemaType<typeof OrganizationSchema> & {
   _id: mongoose.Types.ObjectId;

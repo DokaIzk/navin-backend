@@ -37,10 +37,12 @@ type ValidateApiKeyResult = {
 describe('POST /api/webhooks/iot', () => {
   const body = {
     sensorId: 'sensor-abc-001',
-    timestamp: '2026-01-15T12:30:00.000Z',
-    temp: 22.5,
+    temperature: 22.5,
     humidity: 55,
-    location: { lat: 12.34, lng: 56.78 },
+    latitude: 12.34,
+    longitude: 56.78,
+    batteryLevel: 90,
+    timestamp: '2026-01-15T12:30:00.000Z',
   };
 
   const parsedBodyForHash = {
@@ -49,10 +51,12 @@ describe('POST /api/webhooks/iot', () => {
   };
 
   const dataHash = generateDataHash(parsedBodyForHash);
+  const resolvedShipmentId = 'shipment-123';
 
   let app: Application;
   const mockTelemetryCreate = jest.fn<(payload: unknown) => Promise<TelemetryCreateResult>>();
   const mockValidateApiKey = jest.fn<(rawApiKey: string) => Promise<ValidateApiKeyResult>>();
+  const mockFindActiveShipmentBySensorId = jest.fn<(sensorId: string) => Promise<any>>();
   const mockPushStellarAnchorJob = jest.fn<
     (payload: { telemetryId: string; shipmentId: string; dataHash: string }) => Promise<void>
   >();
@@ -64,19 +68,20 @@ describe('POST /api/webhooks/iot', () => {
       _id: 't1',
       sensorId: body.sensorId,
       shipmentId: resolvedShipmentId,
-      temperature: body.temp,
+      temperature: body.temperature,
       humidity: body.humidity,
-      latitude: body.location.lat,
-      longitude: body.location.lng,
+      latitude: body.latitude,
+      longitude: body.longitude,
+      batteryLevel: body.batteryLevel,
       timestamp: parsedBodyForHash.timestamp,
       dataHash,
       anchorStatus: 'PENDING_ANCHOR',
       rawPayload: parsedBodyForHash,
-    });
+    } as any);
 
     mockValidateApiKey.mockResolvedValue({
       isValid: true,
-      apiKeyDoc: { _id: 'key123', organizationId: 'org456' },
+      apiKeyDoc: { _id: 'key123', organizationId: 'org456', shipmentId: resolvedShipmentId },
     });
 
     mockPushStellarAnchorJob.mockResolvedValue(undefined);
