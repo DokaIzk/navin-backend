@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
-import { getAnomaliesService, resolveAnomalyService } from './anomaly.service.js';
+import * as anomalyService from './anomaly.service.js';
 
 export const getAnomalies = async (req: Request, res: Response) => {
   const { cursor, limit = 20, shipmentId, severity } = req.query;
 
-  const result = await getAnomaliesService({
+  const result = await anomalyService.getAnomaliesService({
     cursor: cursor as string | undefined,
     limit: Number(limit),
     shipmentId: shipmentId as string | undefined,
@@ -17,7 +17,7 @@ export const getAnomalies = async (req: Request, res: Response) => {
 export const resolveAnomaly = async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const anomaly = await resolveAnomalyService(id);
+  const anomaly = await anomalyService.resolveAnomalyService(id);
 
   res.json({ anomaly });
 };

@@ -14,12 +14,13 @@ export async function findActiveShipmentBySensorId(sensorId: string) {
 }
 
 export async function createTelemetryRecord(input: {
-  sensorId: string;
+  sensorId?: string;
   shipmentId: string;
   temperature: number;
   humidity: number;
   latitude: number;
   longitude: number;
+  batteryLevel: number;
   timestamp: Date;
   dataHash: string;
   stellarTxHash?: string;
@@ -33,6 +34,7 @@ export async function createTelemetryRecord(input: {
     humidity: input.humidity,
     latitude: input.latitude,
     longitude: input.longitude,
+    batteryLevel: input.batteryLevel,
     timestamp: input.timestamp,
     dataHash: input.dataHash,
     stellarTxHash: input.stellarTxHash,

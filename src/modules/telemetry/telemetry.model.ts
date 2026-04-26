@@ -9,7 +9,7 @@ export enum TelemetryAnchorStatus {
 const TelemetrySchema = new Schema(
   {
     // metaField — identifies the sensor source
-    sensorId: { type: String, required: true },
+    sensorId: { type: String },
 
     shipmentId: { type: Types.ObjectId, ref: 'Shipment', required: true },
 
