@@ -7,4 +7,5 @@ export const config = {
   stellarSecretKey: env.STELLAR_SECRET_KEY,
   stellarNetwork: env.STELLAR_NETWORK,
   redisUrl: env.REDIS_URL,
+  corsOrigin: env.CORS_ORIGIN,
 } as const;

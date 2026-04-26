@@ -21,6 +21,7 @@ const EnvSchema = z.object({
       message: 'REDIS_URL must start with redis:// or rediss://',
     })
     .default('redis://127.0.0.1:6379'),
+  CORS_ORIGIN: z.string().default('*'),
 });
 
 const parsedEnv = EnvSchema.safeParse(process.env);
