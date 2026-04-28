@@ -1,11 +1,7 @@
 import mongoose, { type InferSchemaType } from 'mongoose';
 import bcrypt from 'bcrypt';
 import { isoDatePlugin } from '../../shared/plugins/isoDatePlugin.js';
-
-export enum OrganizationType {
-  ENTERPRISE = 'ENTERPRISE',
-  LOGISTICS = 'LOGISTICS',
-}
+import { IOrganization, OrganizationType, IUser, UserRole } from '../../shared/types/user.js';
 
 const OrganizationSchema = new mongoose.Schema(
   {
@@ -74,10 +70,6 @@ UserSchema.pre('aggregate', function () {
   this.pipeline().unshift({ $match: { deletedAt: null } });
 });
 
-export type Organization = InferSchemaType<typeof OrganizationSchema> & {
-  _id: mongoose.Types.ObjectId;
-};
-export const OrganizationModel = mongoose.model<Organization>('Organization', OrganizationSchema);
+export const OrganizationModel = mongoose.model<IOrganization>('Organization', OrganizationSchema);
 
-export type User = InferSchemaType<typeof UserSchema> & { _id: mongoose.Types.ObjectId };
-export const UserModel = mongoose.model<User>('User', UserSchema);
+export const UserModel = mongoose.model<IUser>('User', UserSchema);

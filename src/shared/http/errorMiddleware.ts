@@ -1,28 +1,35 @@
+// src/shared/http/errorMiddleware.ts
 import type { ErrorRequestHandler } from 'express';
 import mongoose from 'mongoose';
-import { AppError } from './errors.js';
+import { AppError, ErrorCodes } from './errors.js';
 
 export function errorMiddleware(): ErrorRequestHandler {
   return (err, _req, res, _next) => {
     const isDev = (process.env.NODE_ENV || 'development') !== 'production';
 
-    // Malformed JSON body
-    if (err instanceof SyntaxError && 'status' in err && (err as { status?: number }).status === 400) {
-      return res.status(400).json({
+    // Helper to keep the payload consistent
+    const respond = (status: number, message: string, code: string) => {
+      return res.status(status).json({
         success: false,
-        message: 'Invalid JSON payload',
+        message,
+        error: { code }, // Standardized envelope for frontend
         ...(isDev && { stack: err.stack }),
       });
+    };
+
+    // Malformed JSON body
+    if (
+      err instanceof SyntaxError &&
+      'status' in err &&
+      (err as { status?: number }).status === 400
+    ) {
+      return respond(400, 'Invalid JSON payload', ErrorCodes.BAD_REQUEST);
     }
 
     // Mongoose duplicate key error
     if (err.code === 11000) {
       const field = Object.keys(err.keyValue ?? {})[0] ?? 'field';
-      return res.status(400).json({
-        success: false,
-        message: `Duplicate value for ${field}.`,
-        ...(isDev && { stack: err.stack }),
-      });
+      return respond(400, `Duplicate value for ${field}.`, ErrorCodes.DUPLICATE_KEY);
     }
 
     // Mongoose validation error
@@ -30,36 +37,20 @@ export function errorMiddleware(): ErrorRequestHandler {
       const message = Object.values(err.errors)
         .map((e: mongoose.Error.ValidatorError | mongoose.Error.CastError) => e.message)
         .join(', ');
-      return res.status(422).json({
-        success: false,
-        message,
-        ...(isDev && { stack: err.stack }),
-      });
+      return respond(422, message, ErrorCodes.VALIDATION_ERROR);
     }
 
     // App-level operational errors
     if (err instanceof AppError) {
-      return res.status(err.statusCode).json({
-        success: false,
-        message: err.message,
-        ...(isDev && { stack: err.stack }),
-      });
+      return respond(err.statusCode, err.message, err.code);
     }
 
     // CORS origin rejection
     if (err instanceof Error && err.message === 'Not allowed by CORS') {
-      return res.status(403).json({
-        success: false,
-        message: 'CORS origin denied',
-        ...(isDev && { stack: err.stack }),
-      });
+      return respond(403, 'CORS origin denied', ErrorCodes.FORBIDDEN);
     }
 
     // Fallback
-    return res.status(500).json({
-      success: false,
-      message: 'Internal Server Error',
-      ...(isDev && { stack: err.stack }),
-    });
+    return respond(500, 'Internal Server Error', ErrorCodes.INTERNAL_ERROR);
   };
 }

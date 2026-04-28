@@ -3,11 +3,11 @@ import mongoose, { Schema, Types } from 'mongoose';
 import { faker } from '@faker-js/faker';
 import {
   OrganizationModel,
-  OrganizationType,
   UserModel,
-  UserRole,
 } from '../modules/users/users.model.js';
-import { Shipment, ShipmentStatus } from '../modules/shipments/shipments.model.js';
+import { OrganizationType, UserRole } from '../shared/types/user.js';
+import { Shipment } from '../modules/shipments/shipments.model.js';
+import { ShipmentStatus } from '../shared/types/shipment.js';
 import { connectMongo, disconnectMongo } from '../infra/mongo/connection.js';
 import { env } from '../env.js';
 

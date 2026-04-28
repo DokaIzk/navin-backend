@@ -1,17 +1,6 @@
 import { Schema, Types, model } from 'mongoose';
 import { isoDatePlugin } from '../../shared/plugins/isoDatePlugin.js';
-
-export const ANOMALY_SEVERITIES = ['LOW', 'MEDIUM', 'HIGH'] as const;
-export type AnomalySeverity = (typeof ANOMALY_SEVERITIES)[number];
-
-export const ANOMALY_TYPES = [
-  'TEMPERATURE_EXCEEDED',
-  'TEMPERATURE_BELOW_MIN',
-  'HUMIDITY_EXCEEDED',
-  'HUMIDITY_BELOW_MIN',
-  'BATTERY_LOW',
-] as const;
-export type AnomalyType = (typeof ANOMALY_TYPES)[number];
+import { IAnomaly, AnomalySeverity, AnomalyType, ANOMALY_SEVERITIES, ANOMALY_TYPES } from '../../shared/types/anomaly.js';
 
 const AnomalySchema = new Schema(
   {
@@ -32,4 +21,4 @@ AnomalySchema.index({ resolved: 1, timestamp: -1, _id: -1 });
 AnomalySchema.index({ severity: 1, timestamp: -1, _id: -1 });
 AnomalySchema.index({ severity: 1, shipmentId: 1, timestamp: -1, _id: -1 });
 
-export const Anomaly = model('Anomaly', AnomalySchema);
+export const Anomaly = model<IAnomaly>('Anomaly', AnomalySchema);

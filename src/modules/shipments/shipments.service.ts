@@ -1,17 +1,18 @@
-import { Shipment, ShipmentStatus } from './shipments.model.js';
+import { Shipment } from './shipments.model.js';
 import type { FilterQuery } from 'mongoose';
 import { tokenizeShipment } from '../../services/stellar.service.js';
 import { mockUploadToStorage } from '../../services/mockStorageService.js';
 import { UserModel } from '../users/users.model.js';
 import { emitStatusUpdate } from '../../infra/socket/io.js';
+import { IShipment } from '../../shared/types/shipment.js';
 
 type ShipmentListResult = {
-  data: Awaited<ReturnType<typeof findShipments>>;
+  data: IShipment[];
   nextCursor: string | null;
   hasMore: boolean;
 };
 
-export const findShipments = async (query: FilterQuery<unknown>, limit: number) => {
+export const findShipments = async (query: FilterQuery<unknown>, limit: number): Promise<IShipment[]> => {
   return Shipment.find(query)
     .sort({ createdAt: -1, _id: -1 })
     .limit(limit + 1)

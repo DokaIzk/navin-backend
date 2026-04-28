@@ -1,8 +1,10 @@
+// src/shared/middleware/requireAuth.ts
 import type { RequestHandler } from 'express';
-import { AppError } from '../http/errors.js';
+import { AppError, ErrorCodes } from '../http/errors.js';
 import { verifyToken, type TokenPayload } from '../../modules/auth/auth.service.js';
 import { isTokenBlocked } from '../../infra/redis/tokenBlocklist.js';
 
+// We explicitly use 'declare module' or 'namespace' to extend Express
 declare global {
   namespace Express {
     interface Request {
@@ -15,16 +17,21 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new AppError(401, 'Missing or invalid authorization header', 'UNAUTHORIZED');
+    return next(
+      new AppError(401, 'Missing or invalid authorization header', ErrorCodes.UNAUTHORIZED)
+    );
   }
 
   const token = authHeader.substring(7);
 
   let payload: TokenPayload;
   try {
-    payload = verifyToken(token);
+    const payload = verifyToken(token);
+    // TypeScript should now recognize .user thanks to the declare global block
+    req.user = payload;
+    next();
   } catch {
-    throw new AppError(401, 'Invalid or expired token', 'UNAUTHORIZED');
+    next(new AppError(401, 'Invalid or expired token', ErrorCodes.UNAUTHORIZED));
   }
 
   if (await isTokenBlocked(payload.jti)) {

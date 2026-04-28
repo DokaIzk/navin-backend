@@ -1,12 +1,6 @@
 import { Schema, model, Types } from 'mongoose';
 import { isoDatePlugin } from '../../shared/plugins/isoDatePlugin.js';
-
-export enum ShipmentStatus {
-  CREATED = 'CREATED',
-  IN_TRANSIT = 'IN_TRANSIT',
-  DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED',
-}
+import { IShipment, ShipmentStatus } from '../../shared/types/shipment.js';
 
 const MilestoneSchema = new Schema({
   name: { type: String, required: true },
@@ -56,4 +50,4 @@ ShipmentSchema.pre('aggregate', function () {
   this.pipeline().unshift({ $match: { deletedAt: null } });
 });
 
-export const Shipment = model('Shipment', ShipmentSchema);
+export const Shipment = model<IShipment>('Shipment', ShipmentSchema);
