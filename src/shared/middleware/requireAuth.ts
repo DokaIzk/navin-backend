@@ -1,6 +1,7 @@
 import type { RequestHandler } from 'express';
 import { AppError } from '../http/errors.js';
 import { verifyToken, type TokenPayload } from '../../modules/auth/auth.service.js';
+import { isTokenBlocked } from '../../infra/redis/tokenBlocklist.js';
 
 declare global {
   namespace Express {
@@ -10,7 +11,7 @@ declare global {
   }
 }
 
-export const requireAuth: RequestHandler = (req, res, next) => {
+export const requireAuth: RequestHandler = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -19,11 +20,17 @@ export const requireAuth: RequestHandler = (req, res, next) => {
 
   const token = authHeader.substring(7);
 
+  let payload: TokenPayload;
   try {
-    const payload = verifyToken(token);
-    req.user = payload;
-    next();
+    payload = verifyToken(token);
   } catch {
     throw new AppError(401, 'Invalid or expired token', 'UNAUTHORIZED');
   }
+
+  if (await isTokenBlocked(payload.jti)) {
+    throw new AppError(401, 'Token has been revoked', 'TOKEN_REVOKED');
+  }
+
+  req.user = payload;
+  next();
 };
