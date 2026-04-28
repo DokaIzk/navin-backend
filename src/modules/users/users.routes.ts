@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/http/asyncHandler.js';
-import { validate } from '../../shared/validation/validate.js';
+import { validateRequest } from '../../shared/validation/validate.js';
+import { z } from 'zod';
 import { CreateUserBodySchema } from './users.validation.js';
 import { createUserController, deleteUserController } from './users.controller.js';
 import { requireAuth } from '../../shared/middleware/requireAuth.js';
@@ -8,10 +9,15 @@ import { requireRole } from '../../shared/middleware/requireRole.js';
 
 export const usersRouter = Router();
 
-usersRouter.post('/', validate({ body: CreateUserBodySchema }), asyncHandler(createUserController));
+usersRouter.post(
+  '/',
+  validateRequest({ body: CreateUserBodySchema }),
+  asyncHandler(createUserController)
+);
 usersRouter.delete(
   '/:id',
   requireAuth,
   requireRole('ADMIN', 'SUPER_ADMIN'),
+  validateRequest({ params: z.object({ id: z.string().trim().min(1) }) }),
   asyncHandler(deleteUserController)
 );

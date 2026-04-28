@@ -1,4 +1,4 @@
-import type { AnomalySeverity, AnomalyType } from '../modules/anomaly/anomaly.model.js';
+import type { AnomalySeverity, AnomalyType } from '../shared/types/anomaly.js';
 
 export interface TelemetryPayload {
   shipmentId: string;

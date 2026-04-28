@@ -1,10 +1,7 @@
 import '../loadEnv.js';
 import mongoose, { Schema, Types } from 'mongoose';
 import { faker } from '@faker-js/faker';
-import {
-  OrganizationModel,
-  UserModel,
-} from '../modules/users/users.model.js';
+import { OrganizationModel, UserModel } from '../modules/users/users.model.js';
 import { OrganizationType, UserRole } from '../shared/types/user.js';
 import { Shipment } from '../modules/shipments/shipments.model.js';
 import { ShipmentStatus } from '../shared/types/shipment.js';
@@ -114,7 +111,7 @@ async function seed() {
 
   console.log('\x1b[33m⏳ Seeding shipments…\x1b[0m');
   const shipments = [];
-  
+
   // Standard shipments (happy paths and various statuses)
   for (let i = 0; i < 17; i++) {
     const status = STATUSES[i % STATUSES.length]!;
@@ -258,7 +255,7 @@ async function seed() {
 
   console.log('\x1b[33m⏳ Seeding telemetry…\x1b[0m');
   const telemetryDocs = [];
-  
+
   // Regular telemetry for standard shipments
   for (let i = 0; i < 100; i++) {
     telemetryDocs.push({
@@ -290,11 +287,17 @@ async function seed() {
     const isAnomaly = i % 5 === 0; // Every 5th record is anomalous
     telemetryDocs.push({
       shipmentId: anomalousShipment._id,
-      temperature: isAnomaly ? faker.number.float({ min: 35, max: 50, fractionDigits: 1 }) : faker.number.float({ min: 15, max: 25, fractionDigits: 1 }),
-      humidity: isAnomaly ? faker.number.float({ min: 85, max: 99, fractionDigits: 1 }) : faker.number.float({ min: 40, max: 60, fractionDigits: 1 }),
+      temperature: isAnomaly
+        ? faker.number.float({ min: 35, max: 50, fractionDigits: 1 })
+        : faker.number.float({ min: 15, max: 25, fractionDigits: 1 }),
+      humidity: isAnomaly
+        ? faker.number.float({ min: 85, max: 99, fractionDigits: 1 })
+        : faker.number.float({ min: 40, max: 60, fractionDigits: 1 }),
       latitude: faker.location.latitude(),
       longitude: faker.location.longitude(),
-      batteryLevel: isAnomaly ? faker.number.int({ min: 5, max: 15 }) : faker.number.int({ min: 50, max: 100 }),
+      batteryLevel: isAnomaly
+        ? faker.number.int({ min: 5, max: 15 })
+        : faker.number.int({ min: 50, max: 100 }),
       timestamp: new Date(Date.now() - faker.number.int({ min: 0, max: 2 * 24 * 60 * 60 * 1000 })),
     });
   }

@@ -1,6 +1,6 @@
 import { Schema, Types, model } from 'mongoose';
 import { isoDatePlugin } from '../../shared/plugins/isoDatePlugin.js';
-import { IAnomaly, AnomalySeverity, AnomalyType, ANOMALY_SEVERITIES, ANOMALY_TYPES } from '../../shared/types/anomaly.js';
+import { IAnomaly, ANOMALY_SEVERITIES, ANOMALY_TYPES } from '../../shared/types/anomaly.js';
 
 const AnomalySchema = new Schema(
   {

@@ -8,11 +8,17 @@ export function errorMiddleware(): ErrorRequestHandler {
     const isDev = (process.env.NODE_ENV || 'development') !== 'production';
 
     // Helper to keep the payload consistent
-    const respond = (status: number, message: string, code: string) => {
+    const respond = (
+      status: number,
+      message: string,
+      code: string,
+      details?: Array<{ path: string; message: string; code: string }>
+    ) => {
       return res.status(status).json({
         success: false,
         message,
         error: { code }, // Standardized envelope for frontend
+        ...(details && { details }),
         ...(isDev && { stack: err.stack }),
       });
     };
@@ -24,6 +30,15 @@ export function errorMiddleware(): ErrorRequestHandler {
       (err as { status?: number }).status === 400
     ) {
       return respond(400, 'Invalid JSON payload', ErrorCodes.BAD_REQUEST);
+    }
+
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      'type' in err &&
+      (err as { type?: string }).type === 'entity.too.large'
+    ) {
+      return respond(413, 'Payload too large', ErrorCodes.BAD_REQUEST);
     }
 
     // Mongoose duplicate key error
@@ -42,6 +57,22 @@ export function errorMiddleware(): ErrorRequestHandler {
 
     // App-level operational errors
     if (err instanceof AppError) {
+      if (err.code === ErrorCodes.VALIDATION_ERROR) {
+        try {
+          const parsed = JSON.parse(err.message) as {
+            message?: string;
+            details?: Array<{ path: string; message: string; code: string }>;
+          };
+          return respond(
+            err.statusCode,
+            parsed.message ?? 'Validation error',
+            err.code,
+            parsed.details ?? []
+          );
+        } catch {
+          return respond(err.statusCode, err.message, err.code);
+        }
+      }
       return respond(err.statusCode, err.message, err.code);
     }
 

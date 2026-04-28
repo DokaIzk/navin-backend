@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { validate } from '../../shared/validation/validate.js';
+import { validateRequest } from '../../shared/validation/validate.js';
 import { requireAuth } from '../../shared/middleware/requireAuth.js';
 import { requireRole } from '../../shared/middleware/requireRole.js';
 import { asyncHandler } from '../../shared/http/asyncHandler.js';
@@ -14,6 +14,6 @@ analyticsRouter.get(
   '/performance',
   requireAuth,
   requireRole('ADMIN', 'MANAGER'),
-  validate({ query: PerformanceQuerySchema }),
+  validateRequest({ query: PerformanceQuerySchema }),
   asyncHandler(getPerformanceController)
 );

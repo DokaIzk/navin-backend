@@ -5,7 +5,7 @@ let mongoServer: MongoMemoryServer;
 
 export default async function globalSetup() {
   console.log('[Global Setup] Starting MongoDB Memory Server...');
-  
+
   mongoServer = await MongoMemoryServer.create({
     instance: {
       port: undefined, // Let the system assign a free port
@@ -25,7 +25,7 @@ export default async function globalSetup() {
   // Connect once to verify the server is working
   await connectMongo(mongoUri);
   console.log('[Global Setup] Connected to MongoDB Memory Server');
-  
+
   await disconnectMongo();
   console.log('[Global Setup] Disconnected for test isolation');
 }

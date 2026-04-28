@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { ApiKeyModel } from './apiKey.model.js';
-import type { ApiKey } from './apiKey.model.js';
+import type { IApiKey } from '../../shared/types/apiKey.js';
 import { AppError } from '../../shared/http/errors.js';
 
 interface CreateApiKeyParams {
@@ -48,7 +48,7 @@ export async function generateApiKey(params: CreateApiKeyParams): Promise<Create
 
 export async function validateApiKey(rawApiKey: string): Promise<{
   isValid: boolean;
-  apiKeyDoc?: ApiKey;
+  apiKeyDoc?: IApiKey;
 }> {
   if (!rawApiKey) {
     return { isValid: false };

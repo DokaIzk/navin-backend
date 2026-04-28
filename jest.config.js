@@ -18,7 +18,11 @@ export default {
       },
     ],
   },
-  testMatch: ['**/tests/**/*.test.ts', '**/__tests__/**/*.test.ts', '**/src/modules/**/!(*.model)*.test.ts'],
+  testMatch: [
+    '**/tests/**/*.test.ts',
+    '**/__tests__/**/*.test.ts',
+    '**/src/modules/**/!(*.model)*.test.ts',
+  ],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',

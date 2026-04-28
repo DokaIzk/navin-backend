@@ -17,7 +17,7 @@ export const createApiKeyController: RequestHandler = async (req, res) => {
     201,
     true,
     'API key created successfully. Save this key securely - it will not be shown again.',
-    result,
+    result
   );
 };
 

@@ -4,7 +4,7 @@ import { tokenizeShipment } from '../../services/stellar.service.js';
 import { mockUploadToStorage } from '../../services/mockStorageService.js';
 import { UserModel } from '../users/users.model.js';
 import { emitStatusUpdate } from '../../infra/socket/io.js';
-import { IShipment } from '../../shared/types/shipment.js';
+import { IShipment, ShipmentStatus } from '../../shared/types/shipment.js';
 
 type ShipmentListResult = {
   data: IShipment[];
@@ -12,7 +12,10 @@ type ShipmentListResult = {
   hasMore: boolean;
 };
 
-export const findShipments = async (query: FilterQuery<unknown>, limit: number): Promise<IShipment[]> => {
+export const findShipments = async (
+  query: FilterQuery<unknown>,
+  limit: number
+): Promise<IShipment[]> => {
   return Shipment.find(query)
     .sort({ createdAt: -1, _id: -1 })
     .limit(limit + 1)
@@ -85,10 +88,16 @@ export const updateShipmentStatusService = async (
 
   shipment.status = status;
 
-  const milestone: Record<string, unknown> = {
+  const milestone = {
     name: status,
     timestamp: new Date(),
     description: `Status changed to ${status}`,
+  } as {
+    name: string;
+    timestamp: Date;
+    description?: string;
+    userId?: string;
+    walletAddress?: string;
   };
 
   if (actor?.userId) {
@@ -103,7 +112,9 @@ export const updateShipmentStatusService = async (
       | null;
 
     if (userLookup && typeof userLookup === 'object' && 'select' in userLookup) {
-      const found = await userLookup.select?.({ walletAddress: 1 }).lean<{ walletAddress?: string }>();
+      const found = await userLookup
+        .select?.({ walletAddress: 1 })
+        .lean<{ walletAddress?: string }>();
       if (found?.walletAddress) {
         milestone.walletAddress = found.walletAddress;
       }

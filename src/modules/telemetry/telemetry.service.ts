@@ -1,5 +1,6 @@
 import { Telemetry, TelemetryAnchorStatus } from './telemetry.model.js';
-import { Shipment, ShipmentStatus } from '../shipments/shipments.model.js';
+import { Shipment } from '../shipments/shipments.model.js';
+import { ShipmentStatus } from '../../shared/types/shipment.js';
 import type { FilterQuery } from 'mongoose';
 
 /**
@@ -47,7 +48,7 @@ export async function updateTelemetryAnchor(telemetryId: string, stellarTxHash: 
   return Telemetry.findByIdAndUpdate(
     telemetryId,
     { stellarTxHash, anchorStatus: TelemetryAnchorStatus.ANCHORED },
-    { new: true },
+    { new: true }
   );
 }
 
@@ -55,7 +56,7 @@ export async function markTelemetryAnchorFailed(telemetryId: string, error: stri
   return Telemetry.findByIdAndUpdate(
     telemetryId,
     { anchorStatus: TelemetryAnchorStatus.ANCHOR_FAILED, anchorError: error },
-    { new: true },
+    { new: true }
   );
 }
 

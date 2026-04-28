@@ -7,6 +7,7 @@ import {
   updateTelemetryAnchor,
   markTelemetryAnchorFailed,
 } from '../modules/telemetry/telemetry.service.js';
+import { logger } from '../shared/logger/logger.js';
 
 interface AnchorTelemetryJob {
   telemetryId: string;
@@ -17,7 +18,7 @@ interface AnchorTelemetryJob {
 async function processStellarAnchor(job: Job<AnchorTelemetryJob>) {
   const { telemetryId, shipmentId, dataHash } = job.data;
 
-  console.log(`[Stellar Worker] Processing job ${job.id} for telemetry ${telemetryId}`);
+  logger.info({ jobId: job.id, telemetryId }, 'Processing stellar anchor job');
 
   try {
     // Execute Stellar transaction
@@ -26,19 +27,17 @@ async function processStellarAnchor(job: Job<AnchorTelemetryJob>) {
       dataHash,
     });
 
-    console.log(
-      `[Stellar Worker] Successfully anchored telemetry ${telemetryId} with tx ${stellarTxHash}`
-    );
+    logger.info({ telemetryId, stellarTxHash }, 'Telemetry anchored on Stellar');
 
     // Update MongoDB document with the transaction hash
     await updateTelemetryAnchor(telemetryId, stellarTxHash);
 
-    console.log(`[Stellar Worker] Updated telemetry ${telemetryId} in database`);
+    logger.info({ telemetryId }, 'Telemetry anchor persisted in MongoDB');
 
     return { success: true, stellarTxHash };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`[Stellar Worker] Failed to anchor telemetry ${telemetryId}:`, errorMessage);
+    logger.error({ telemetryId, errorMessage }, 'Failed to anchor telemetry');
 
     // Mark as failed in database
     await markTelemetryAnchorFailed(telemetryId, errorMessage);
@@ -50,7 +49,7 @@ async function processStellarAnchor(job: Job<AnchorTelemetryJob>) {
 async function startWorker() {
   // Connect to MongoDB
   await connectMongo(config.mongoUri);
-  console.log('[Stellar Worker] Connected to MongoDB');
+  logger.info('Stellar worker connected to MongoDB');
 
   // Create BullMQ worker
   const worker = new Worker<AnchorTelemetryJob>('transaction_queue', processStellarAnchor, {
@@ -62,34 +61,34 @@ async function startWorker() {
   });
 
   worker.on('completed', job => {
-    console.log(`[Stellar Worker] Job ${job.id} completed successfully`);
+    logger.info({ jobId: job.id }, 'Stellar worker job completed');
   });
 
   worker.on('failed', (job, err) => {
-    console.error(`[Stellar Worker] Job ${job?.id} failed:`, err.message);
+    logger.error({ jobId: job?.id, err }, 'Stellar worker job failed');
   });
 
   worker.on('error', err => {
-    console.error('[Stellar Worker] Worker error:', err);
+    logger.error({ err }, 'Stellar worker error');
   });
 
-  console.log('[Stellar Worker] Started and listening for jobs on transaction_queue');
+  logger.info('Stellar worker listening on transaction_queue');
 
   // Graceful shutdown
   process.on('SIGTERM', async () => {
-    console.log('[Stellar Worker] SIGTERM received, closing worker...');
+    logger.info('SIGTERM received, closing stellar worker');
     await worker.close();
     process.exit(0);
   });
 
   process.on('SIGINT', async () => {
-    console.log('[Stellar Worker] SIGINT received, closing worker...');
+    logger.info('SIGINT received, closing stellar worker');
     await worker.close();
     process.exit(0);
   });
 }
 
 startWorker().catch(err => {
-  console.error('[Stellar Worker] Failed to start:', err);
+  logger.error({ err }, 'Failed to start stellar worker');
   process.exit(1);
 });

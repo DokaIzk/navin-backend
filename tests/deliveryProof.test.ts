@@ -2,6 +2,7 @@ import { jest } from '@jest/globals';
 import request from 'supertest';
 import { fileURLToPath } from 'node:url';
 import type { Application } from 'express';
+import jwt from 'jsonwebtoken';
 
 type PrimitiveId = string | number;
 type ShipmentRecord = {
@@ -59,10 +60,15 @@ await jest.unstable_mockModule('../src/modules/shipments/shipments.model.js', ()
 
 describe('POST /api/shipments/:id/proof', () => {
   let app: Application;
+  let authToken: string;
 
   beforeAll(async () => {
     const appModule = await import('../src/app.js');
     app = appModule.buildApp();
+    authToken = jwt.sign(
+      { userId: 'user-1', role: 'MANAGER', organizationId: 'org-1' },
+      process.env.JWT_SECRET!
+    );
   });
 
   beforeEach(() => {
@@ -83,6 +89,7 @@ describe('POST /api/shipments/:id/proof', () => {
     const imagePath = fileURLToPath(new URL('./fixtures/test-image.jpg', import.meta.url));
     const res = await request(app)
       .post(`/api/shipments/${shipment._id}/proof`)
+      .set('Authorization', `Bearer ${authToken}`)
       .field('recipientSignatureName', 'John Doe')
       .attach('file', imagePath);
 
@@ -105,6 +112,7 @@ describe('POST /api/shipments/:id/proof', () => {
 
     const res = await request(app)
       .post(`/api/shipments/${shipment._id}/proof`)
+      .set('Authorization', `Bearer ${authToken}`)
       .field('recipientSignatureName', 'John Doe');
 
     expect(res.status).toBe(400);

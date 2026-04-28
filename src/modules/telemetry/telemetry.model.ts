@@ -39,3 +39,4 @@ TelemetrySchema.index({ shipmentId: 1, timestamp: -1 });
 TelemetrySchema.index({ anchorStatus: 1 });
 
 export const Telemetry = model<ITelemetry>('Telemetry', TelemetrySchema);
+export { TelemetryAnchorStatus };

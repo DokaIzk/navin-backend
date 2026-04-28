@@ -6,6 +6,7 @@ import { config } from './config/index.js';
 import { connectMongo } from './infra/mongo/connection.js';
 import { initSocketIO } from './infra/socket/io.js';
 import { startAlertWorker } from './workers/alert.worker.js';
+import { logger } from './shared/logger/logger.js';
 
 async function main() {
   await connectMongo(config.mongoUri);
@@ -16,11 +17,11 @@ async function main() {
   startAlertWorker();
 
   httpServer.listen(config.port, () => {
-    console.log(`Listening on :${config.port}`);
+    logger.info({ port: config.port }, 'HTTP server listening');
   });
 }
 
 main().catch(err => {
-  console.error(err);
+  logger.error({ err }, 'Failed to start application');
   process.exit(1);
 });

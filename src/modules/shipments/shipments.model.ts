@@ -51,3 +51,4 @@ ShipmentSchema.pre('aggregate', function () {
 });
 
 export const Shipment = model<IShipment>('Shipment', ShipmentSchema);
+export { ShipmentStatus };

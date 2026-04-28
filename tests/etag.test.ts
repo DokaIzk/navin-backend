@@ -14,9 +14,7 @@ describe('ETag support (Issue #80)', () => {
     const first = await request(app).get('/api/health');
     const etag = first.headers['etag'] as string;
 
-    const second = await request(app)
-      .get('/api/health')
-      .set('If-None-Match', etag);
+    const second = await request(app).get('/api/health').set('If-None-Match', etag);
 
     expect(second.status).toBe(304);
   });

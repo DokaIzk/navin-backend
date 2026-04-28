@@ -31,7 +31,12 @@ export interface TelemetryUpdatePayload {
 export interface AnomalyAlertPayload {
   anomalyId: string;
   shipmentId: string;
-  type: 'TEMPERATURE_EXCEEDED' | 'TEMPERATURE_BELOW_MIN' | 'HUMIDITY_EXCEEDED' | 'HUMIDITY_BELOW_MIN' | 'BATTERY_LOW';
+  type:
+    | 'TEMPERATURE_EXCEEDED'
+    | 'TEMPERATURE_BELOW_MIN'
+    | 'HUMIDITY_EXCEEDED'
+    | 'HUMIDITY_BELOW_MIN'
+    | 'BATTERY_LOW';
   severity: 'LOW' | 'MEDIUM' | 'HIGH';
   message: string;
   timestamp: string; // ISO 8601 UTC

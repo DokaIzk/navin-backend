@@ -1,11 +1,10 @@
 import { isTokenBlocked, blockToken } from '../src/infra/redis/tokenBlocklist.js';
-import { getRedisClient } from '../src/infra/redis/connection.js';
 
 // Mock ioredis
 jest.mock('../src/infra/redis/connection.js', () => {
   const store = new Map<string, string>();
   const mockClient = {
-    set: jest.fn(async (key: string, value: string, _ex: string, ttl: number) => {
+    set: jest.fn(async (key: string, value: string, _ex: string, _ttl: number) => {
       store.set(key, value);
       // auto-expire simulation not needed for unit tests
       return 'OK';

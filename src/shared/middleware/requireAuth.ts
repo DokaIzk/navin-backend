@@ -26,18 +26,15 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
 
   let payload: TokenPayload;
   try {
-    const payload = verifyToken(token);
-    // TypeScript should now recognize .user thanks to the declare global block
-    req.user = payload;
-    next();
+    payload = verifyToken(token);
   } catch {
-    next(new AppError(401, 'Invalid or expired token', ErrorCodes.UNAUTHORIZED));
+    return next(new AppError(401, 'Invalid or expired token', ErrorCodes.UNAUTHORIZED));
   }
 
   if (await isTokenBlocked(payload.jti)) {
-    throw new AppError(401, 'Token has been revoked', 'TOKEN_REVOKED');
+    return next(new AppError(401, 'Token has been revoked', 'TOKEN_REVOKED'));
   }
 
   req.user = payload;
-  next();
+  return next();
 };

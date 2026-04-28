@@ -2,7 +2,6 @@ import { describe, expect, beforeAll, afterAll, it, jest } from '@jest/globals';
 import { io, Socket } from 'socket.io-client';
 import request from 'supertest';
 import { createServer, Server } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
 import { generateDataHash } from '../src/shared/utils/crypto.js';
 import type { Application } from 'express';
 
@@ -32,7 +31,6 @@ type ValidateApiKeyResult = {
 describe('Socket.io Client Integration Tests', () => {
   let app: Application;
   let httpServer: Server;
-  let ioServer: SocketIOServer;
   let socketClient: Socket;
   const TEST_PORT = 3999;
   const TEST_SHIPMENT_ID = '671000000000000000000001';
@@ -148,10 +146,10 @@ describe('Socket.io Client Integration Tests', () => {
 
     // Initialize Socket.io on the same server
     const { initSocketIO } = await import('../src/infra/socket/io.js');
-    ioServer = initSocketIO(httpServer);
+    initSocketIO(httpServer);
 
     // Start the server
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       httpServer.listen(TEST_PORT, () => {
         console.log(`[Test Server] Running on port ${TEST_PORT}`);
         resolve();
@@ -166,7 +164,7 @@ describe('Socket.io Client Integration Tests', () => {
     });
 
     // Wait for connection
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       socketClient.on('connect', () => {
         console.log('[Socket Client] Connected');
         resolve();
@@ -179,7 +177,7 @@ describe('Socket.io Client Integration Tests', () => {
       socketClient.disconnect();
     }
     if (httpServer) {
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         httpServer.close(() => resolve());
       });
     }
@@ -191,11 +189,11 @@ describe('Socket.io Client Integration Tests', () => {
       socketClient.emit('join_shipment', TEST_SHIPMENT_ID);
 
       // Wait for room join
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Step 2: Set up event listener for telemetry_update
-      const telemetryUpdatePromise = new Promise<unknown>((resolve) => {
-        socketClient.on('telemetry_update', (data) => {
+      const telemetryUpdatePromise = new Promise<unknown>(resolve => {
+        socketClient.on('telemetry_update', data => {
           resolve(data);
         });
       });
@@ -221,7 +219,7 @@ describe('Socket.io Client Integration Tests', () => {
 
       // Step 4: Assert the client receives the WebSocket event
       const receivedData = await telemetryUpdatePromise;
-      
+
       expect(receivedData).toEqual(
         expect.objectContaining({
           shipmentId: TEST_SHIPMENT_ID,
@@ -236,11 +234,11 @@ describe('Socket.io Client Integration Tests', () => {
 
     it('should not receive events for shipment room not joined', async () => {
       const differentShipmentId = '671000000000000000000999';
-      
+
       // Don't join this shipment room
       const eventReceived: { received: boolean } = { received: false };
-      
-      socketClient.on('telemetry_update', (data) => {
+
+      socketClient.on('telemetry_update', data => {
         // Check if this is for a shipment we didn't join
         if ((data as { shipmentId: string }).shipmentId === differentShipmentId) {
           eventReceived.received = true;
@@ -258,14 +256,11 @@ describe('Socket.io Client Integration Tests', () => {
         timestamp: '2026-01-15T13:30:00.000Z',
       };
 
-      await request(app)
-        .post('/api/webhooks/iot')
-        .set('x-api-key', 'valid-api-key')
-        .send(body);
+      await request(app).post('/api/webhooks/iot').set('x-api-key', 'valid-api-key').send(body);
 
       // Wait a bit to ensure no event is received
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       expect(eventReceived.received).toBe(false);
     }, 30_000);
   });

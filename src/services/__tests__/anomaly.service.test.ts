@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { evaluateTelemetry } from '../anomaly.service.js';
 
 describe('evaluateTelemetry', () => {
@@ -109,5 +110,44 @@ describe('evaluateTelemetry', () => {
       { maxTemp: 10, maxHumidity: 60, minBatteryLevel: 20 }
     );
     expect(anomalies).toEqual([]);
+  });
+
+  it('detects a high temperature anomaly at the exact simulated time threshold is crossed', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
+
+    const startTemp = 20;
+    const hourlyIncrease = 1.6;
+    const maxTemp = 25;
+    const thresholdCrossHour = Math.ceil((maxTemp - startTemp) / hourlyIncrease);
+    let detectedAt: Date | null = null;
+
+    for (let hour = 0; hour <= 4; hour += 1) {
+      const currentTime = new Date('2026-01-01T00:00:00.000Z');
+      currentTime.setHours(currentTime.getHours() + hour);
+      jest.setSystemTime(currentTime);
+
+      const anomalies = evaluateTelemetry(
+        {
+          shipmentId: basePayload.shipmentId,
+          timestamp: new Date(),
+          temperature: startTemp + hour * hourlyIncrease,
+          humidity: 55,
+          batteryLevel: 80,
+        },
+        { maxTemp }
+      );
+
+      if (anomalies.some(a => a.type === 'TEMPERATURE_EXCEEDED')) {
+        detectedAt = new Date();
+        break;
+      }
+    }
+
+    const expectedDetectionTime = new Date('2026-01-01T00:00:00.000Z');
+    expectedDetectionTime.setHours(expectedDetectionTime.getHours() + thresholdCrossHour);
+
+    expect(detectedAt?.toISOString()).toEqual(expectedDetectionTime.toISOString());
+    jest.useRealTimers();
   });
 });

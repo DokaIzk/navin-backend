@@ -37,8 +37,6 @@ jest.unstable_mockModule('../../../shared/middleware/socketAuth.js', () => ({
 }));
 
 describe('io.ts — disconnect cleanup handlers', () => {
-  let connectionHandler: (socket: Socket) => void;
-
   beforeEach(async () => {
     // Re-import fresh module each suite run
     const mod = await import('../io.js');
@@ -54,24 +52,12 @@ describe('io.ts — disconnect cleanup handlers', () => {
 
     // We'll use a different approach: mock socket.io Server so we can
     // capture the 'connection' callback.
-    const capturedHandlers: Record<string, ((...args: unknown[]) => void)> = {};
-    const mockIo = {
-      use: jest.fn(),
-      on(event: string, cb: (...args: unknown[]) => void) {
-        capturedHandlers[event] = cb;
-        return this;
-      },
-    };
-
     // Temporarily replace Server constructor
-    const { initSocketIO } = mod;
     // We can't easily replace the import, so instead we test the exported
     // getActiveUsers map by directly exercising the handlers via a real
     // initSocketIO call with a mock http server.
     //
     // Since socket.io Server wraps the http server, we pass a minimal stub.
-    const fakeHttpServer = { on: jest.fn(), listen: jest.fn() } as unknown as import('http').Server;
-
     // initSocketIO creates a real Server internally; we can't intercept it
     // without mocking socket.io. Instead, test getActiveUsers indirectly
     // by verifying the map state after simulated events.
@@ -80,15 +66,6 @@ describe('io.ts — disconnect cleanup handlers', () => {
     // the map directly. Since getActiveUsers is exported, we verify
     // the map is empty before any connection.
     expect(mod.getActiveUsers().size).toBe(0);
-
-    // Store connection handler reference for use in individual tests
-    connectionHandler = (socket: Socket) => {
-      // Replicate what initSocketIO does inside io.on('connection', ...)
-      // We test this logic directly since we can't intercept the real Server.
-      // The actual handler logic is: set activeUsers, register disconnect.
-      // We verify this by reading the source behaviour through getActiveUsers.
-      void socket;
-    };
   });
 
   // ── Unit-level tests: exercise the handler logic directly ──────────────────
@@ -133,7 +110,9 @@ describe('io.ts — disconnect cleanup handlers', () => {
       // Directly test the Map behaviour that the handlers manipulate:
       const activeUsers = new Map<string, string>();
 
-      function simulateConnection(socket: Socket & { trigger: (e: string, ...a: unknown[]) => void }) {
+      function simulateConnection(
+        socket: Socket & { trigger: (e: string, ...a: unknown[]) => void }
+      ) {
         if (socket.user?.userId) {
           activeUsers.set(socket.id, socket.user.userId);
         }
@@ -148,7 +127,10 @@ describe('io.ts — disconnect cleanup handlers', () => {
 
     it('adds userId to activeUsers on connection', async () => {
       const { activeUsers, simulateConnection } = await setupWithMockedServer();
-      const socket = makeSocket({ id: 'sock-1' as unknown as string, user: { userId: 'user-1', role: 'admin' } });
+      const socket = makeSocket({
+        id: 'sock-1' as unknown as string,
+        user: { userId: 'user-1', role: 'admin' },
+      });
       (socket as unknown as { id: string }).id = 'sock-1';
 
       simulateConnection(socket);
@@ -227,12 +209,8 @@ describe('io.ts — disconnect cleanup handlers', () => {
 
       socket.trigger('disconnecting', 'transport close');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[Socket] Disconnecting:')
-      );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('shipment_abc')
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[Socket] Disconnecting:'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('shipment_abc'));
 
       consoleSpy.mockRestore();
     });

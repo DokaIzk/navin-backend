@@ -12,7 +12,11 @@ jest.unstable_mockModule('../../infra/redis/connection.js', () => ({
 }));
 
 describe('dispatchAlert', () => {
-  let dispatchAlert: (data: { type: 'ANOMALY' | 'STATUS_CHANGE'; message: string; shipmentId: string }) => Promise<void>;
+  let dispatchAlert: (data: {
+    type: 'ANOMALY' | 'STATUS_CHANGE';
+    message: string;
+    shipmentId: string;
+  }) => Promise<void>;
 
   beforeEach(async () => {
     jest.clearAllMocks();

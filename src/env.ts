@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logger } from './shared/logger/logger.js';
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -28,10 +29,10 @@ const EnvSchema = z.object({
 const parsedEnv = EnvSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
-  console.error('Invalid environment variables:');
+  logger.error('Invalid environment variables');
   for (const issue of parsedEnv.error.issues) {
     const key = issue.path.join('.') || 'ENV';
-    console.error(`- ${key}: ${issue.message}`);
+    logger.error({ key }, issue.message);
   }
   process.exit(1);
 }

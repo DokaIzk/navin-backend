@@ -1,6 +1,6 @@
 import express, { Router } from 'express';
 
-import { validate } from '../../shared/validation/validate.js';
+import { validateRequest } from '../../shared/validation/validate.js';
 import { asyncHandler } from '../../shared/http/asyncHandler.js';
 import { requireApiKey } from '../../shared/middleware/requireApiKey.js';
 import { IotWebhookBodySchema } from './iot.validation.js';
@@ -12,6 +12,6 @@ webhooksRouter.post(
   '/iot',
   express.json({ limit: '1mb' }),
   asyncHandler(requireApiKey),
-  validate({ body: IotWebhookBodySchema }),
+  validateRequest({ body: IotWebhookBodySchema }),
   asyncHandler(iotWebhookController)
 );

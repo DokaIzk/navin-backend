@@ -1,4 +1,4 @@
-import mongoose, { type InferSchemaType } from 'mongoose';
+import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import { isoDatePlugin } from '../../shared/plugins/isoDatePlugin.js';
 import { IOrganization, OrganizationType, IUser, UserRole } from '../../shared/types/user.js';
@@ -12,14 +12,6 @@ const OrganizationSchema = new mongoose.Schema(
 );
 
 OrganizationSchema.plugin(isoDatePlugin);
-
-export enum UserRole {
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
-  VIEWER = 'VIEWER',
-  CUSTOMER = 'CUSTOMER',
-}
 
 const UserSchema = new mongoose.Schema(
   {
@@ -73,3 +65,4 @@ UserSchema.pre('aggregate', function () {
 export const OrganizationModel = mongoose.model<IOrganization>('Organization', OrganizationSchema);
 
 export const UserModel = mongoose.model<IUser>('User', UserSchema);
+export { UserRole };

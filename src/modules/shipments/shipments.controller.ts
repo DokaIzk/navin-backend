@@ -87,7 +87,7 @@ export const uploadShipmentProof = async (req: Request, res: Response) => {
     }
 
     sendResponse(res, 200, true, 'Proof uploaded', shipment);
-  } catch (error) {
+  } catch {
     sendResponse(res, 500, false, 'Server error', null);
   }
 };

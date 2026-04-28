@@ -14,6 +14,7 @@ import type {
   AnomalyAlertPayload,
   StatusUpdatePayload,
 } from '../../shared/types/socketEvents.js';
+import { logger } from '../../shared/logger/logger.js';
 
 let io: Server | null = null;
 
@@ -45,13 +46,18 @@ export function initSocketIO(httpServer: HttpServer): Server {
     leaveAllShipmentRoomsOnDisconnect(socket);
 
     socket.on('disconnecting', reason => {
-      console.log(
+      logger.info(
+        {
+          socketId: socket.id,
+          reason,
+          rooms: [...socket.rooms],
+        },
         `[Socket] Disconnecting: ${socket.id} | Reason: ${reason} | Rooms: ${[...socket.rooms].join(', ')}`
       );
     });
 
     socket.on('disconnect', reason => {
-      console.log(`[Socket] Client disconnected: ${socket.id} | Reason: ${reason}`);
+      logger.info({ socketId: socket.id, reason }, 'Socket client disconnected');
       activeUsers.delete(socket.id);
     });
 

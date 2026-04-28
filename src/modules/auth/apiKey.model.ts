@@ -1,4 +1,4 @@
-import mongoose, { type InferSchemaType } from 'mongoose';
+import mongoose from 'mongoose';
 import { isoDatePlugin } from '../../shared/plugins/isoDatePlugin.js';
 import { IApiKey } from '../../shared/types/apiKey.js';
 

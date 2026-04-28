@@ -1,9 +1,8 @@
 import request from 'supertest';
-import { app } from '../src/app.js';
-import { UserModel } from '../src/modules/users/users.model.js';
-import { Shipment } from '../src/modules/shipments/shipments.model.js';
+import { buildApp } from '../src/app.js';
 
 describe('Soft Delete Integration Tests', () => {
+  const app = buildApp();
   describe('DELETE /api/users/:id', () => {
     it('should require authentication', async () => {
       const response = await request(app)

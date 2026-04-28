@@ -1,28 +1,5 @@
 import { describe, expect, beforeEach, afterEach, it, jest } from '@jest/globals';
 import { Worker, Job } from 'bullmq';
-import mongoose from 'mongoose';
-
-// Mock Stellar SDK
-const mockStellarSdk = {
-  Transaction: jest.fn().mockImplementation(() => ({
-    toXDR: () => 'mock-xdr',
-  })),
-  Keypair: {
-    fromSecret: jest.fn().mockReturnValue({
-      publicKey: 'mock-public-key',
-    }),
-  },
-  Server: jest.fn().mockImplementation(() => ({
-    submitTransaction: jest.fn().mockRejectedValue(new Error('Timeout')),
-    getTransaction: jest.fn(),
-  })),
-  TimeoutError: class TimeoutError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = 'TimeoutError';
-    }
-  },
-};
 
 // Create a real TimeoutError class that BullMQ can catch
 class StellarTimeoutError extends Error {
@@ -40,12 +17,9 @@ describe('Stellar Worker Failure and Retry Tests', () => {
   let mockQueue: {
     add: jest.MockedFunction<() => Promise<Job>>;
   };
-  let processedJobs: Array<{ id: string; attemptsMade: number; data: unknown }>;
   let worker: Worker | null;
 
   beforeEach(() => {
-    processedJobs = [];
-    
     mockConnection = {
       host: 'localhost',
       port: 6379,
@@ -99,7 +73,7 @@ describe('Stellar Worker Failure and Retry Tests', () => {
       const mockJobProcessor = jest.fn().mockImplementation(async (job: Job) => {
         attemptCount++;
         console.log(`[Test] Processing job ${job.id}, attempt ${attemptCount}`);
-        
+
         // Simulate the Stellar SDK TimeoutError
         throw new StellarTimeoutError('Transaction timed out after 60 seconds');
       });
@@ -116,7 +90,7 @@ describe('Stellar Worker Failure and Retry Tests', () => {
       const completedJobs: Job[] = [];
       const failedJobs: Job[] = [];
 
-      worker.on('completed', (job) => {
+      worker.on('completed', job => {
         completedJobs.push(job);
       });
 
@@ -126,21 +100,21 @@ describe('Stellar Worker Failure and Retry Tests', () => {
       });
 
       // Add a test job
-      const testJob = await worker.add('anchor-telemetry', {
+      await worker.add('anchor-telemetry', {
         telemetryId: 'telemetry-123',
         shipmentId: 'shipment-456',
         dataHash: 'abc123hash',
       });
 
       // Wait for all retries to exhaust (maxRetries + 1 attempts)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Verify the job was retried maxRetries times
       expect(attemptCount).toBe(maxRetries + 1); // Initial attempt + maxRetries
-      
+
       // Verify the job eventually moved to failed state
       expect(failedJobs.length).toBeGreaterThan(0);
-      
+
       // Verify the last error was the TimeoutError
       const lastFailedJob = failedJobs[failedJobs.length - 1];
       expect(lastFailedJob).toBeDefined();
@@ -157,7 +131,7 @@ describe('Stellar Worker Failure and Retry Tests', () => {
         return { stellarTxHash: 'success-tx-hash' };
       };
 
-      const mockJobProcessor = jest.fn().mockImplementation(async (job: Job) => {
+      const mockJobProcessor = jest.fn().mockImplementation(async (_job: Job) => {
         return failFirstTwoAttempts();
       });
 
@@ -169,7 +143,7 @@ describe('Stellar Worker Failure and Retry Tests', () => {
       });
 
       const completedJobs: Job[] = [];
-      worker.on('completed', (job) => {
+      worker.on('completed', job => {
         completedJobs.push(job);
       });
 
@@ -181,7 +155,7 @@ describe('Stellar Worker Failure and Retry Tests', () => {
       });
 
       // Wait for job processing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Verify the job eventually succeeded
       expect(completedJobs.length).toBe(1);
@@ -202,7 +176,7 @@ describe('Stellar Worker Failure and Retry Tests', () => {
       });
 
       const failedJobs: Job[] = [];
-      worker.on('failed', (job, err) => {
+      worker.on('failed', job => {
         failedJobs.push(job as Job);
       });
 
@@ -214,7 +188,7 @@ describe('Stellar Worker Failure and Retry Tests', () => {
       });
 
       // Wait for job to fail
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Should fail immediately without retries for non-timeout errors
       // Note: BullMQ retries all errors by default, but we can configure backoff
@@ -236,8 +210,8 @@ describe('Stellar Worker Failure and Retry Tests', () => {
       });
 
       const failedJobs: Array<{ id: string; attemptsMade: number }> = [];
-      
-      worker.on('failed', (job) => {
+
+      worker.on('failed', job => {
         failedJobs.push({
           id: job.id || 'unknown',
           attemptsMade: job.attemptsMade || 0,
@@ -252,7 +226,7 @@ describe('Stellar Worker Failure and Retry Tests', () => {
       });
 
       // Wait for all retries to exhaust
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Verify job exhausted all retries
       const lastFailedJob = failedJobs[failedJobs.length - 1];

@@ -1,7 +1,7 @@
 import { describe, expect, beforeAll, afterAll, it, jest } from '@jest/globals';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import mongoose from 'mongoose';
 import type { Application } from 'express';
 import { UserRole } from '../src/modules/users/users.model.js';
 import { env } from '../src/env.js';
@@ -23,26 +23,38 @@ const RBAC_MATRIX: Record<string, Role[]> = {
   'GET /api/users': [UserRole.SUPER_ADMIN, UserRole.ADMIN],
   'POST /api/users': [UserRole.SUPER_ADMIN, UserRole.ADMIN],
   'DELETE /api/users/:id': [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-  
+
   // Shipments - managers+ can modify, viewers can read
-  'GET /api/shipments': [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER, UserRole.CUSTOMER],
+  'GET /api/shipments': [
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.VIEWER,
+    UserRole.CUSTOMER,
+  ],
   'POST /api/shipments': [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER],
   'PATCH /api/shipments/:id': [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER],
   'DELETE /api/shipments/:id': [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-  
+
   // Analytics - managers+ can access
   'GET /api/analytics': [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER],
-  
+
   // Anomalies - managers+ can access
   'GET /api/anomalies': [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER],
   'PATCH /api/anomalies/:id': [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER],
-  
+
   // Telemetry - all authenticated users can read
-  'GET /api/telemetry': [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER, UserRole.VIEWER, UserRole.CUSTOMER],
-  
+  'GET /api/telemetry': [
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.VIEWER,
+    UserRole.CUSTOMER,
+  ],
+
   // Health - public
   'GET /api/health': ['PUBLIC' as Role],
-  
+
   // Webhooks - IoT webhook uses API key, not user auth
   'POST /api/webhooks/iot': ['API_KEY' as Role],
 };
@@ -51,8 +63,6 @@ describe('RBAC Matrix Integration Tests', () => {
   let app: Application;
   let testUserIds: Record<Role, string>;
   let testOrganizationId: string;
-  const testPassword = 'test-password-123';
-
   // Mock dependencies
   const mockUserFind = jest.fn();
   const mockUserFindOne = jest.fn();
@@ -155,7 +165,7 @@ describe('RBAC Matrix Integration Tests', () => {
         skip: jest.fn().mockResolvedValue([]),
       }),
     });
-    
+
     mockShipmentFind.mockReturnValue({
       limit: jest.fn().mockResolvedValue([]),
       skip: jest.fn().mockResolvedValue([]),
@@ -164,17 +174,17 @@ describe('RBAC Matrix Integration Tests', () => {
         skip: jest.fn().mockResolvedValue([]),
       }),
     });
-    
+
     mockTelemetryFind.mockReturnValue({
       limit: jest.fn().mockResolvedValue([]),
       skip: jest.fn().mockResolvedValue([]),
     });
-    
+
     mockAnomalyFind.mockReturnValue({
       limit: jest.fn().mockResolvedValue([]),
       skip: jest.fn().mockResolvedValue([]),
     });
-    
+
     mockAnalyticsAggregate.mockResolvedValue([]);
     mockApiKeyFindOne.mockResolvedValue({ isValid: true });
   }, 60_000);
@@ -204,10 +214,8 @@ describe('RBAC Matrix Integration Tests', () => {
 
         it(`${role} ${shouldAllow ? 'should access' : 'should NOT access'} GET /api/users`, async () => {
           const token = generateToken(role);
-          
-          const res = await request(app)
-            .get('/api/users')
-            .set('Authorization', `Bearer ${token}`);
+
+          const res = await request(app).get('/api/users').set('Authorization', `Bearer ${token}`);
 
           if (shouldAllow) {
             expect([200, 404]).toContain(res.status); // 404 if no users found
@@ -226,7 +234,7 @@ describe('RBAC Matrix Integration Tests', () => {
 
         it(`${role} ${shouldAllow ? 'should access' : 'should NOT access'} POST /api/shipments`, async () => {
           const token = generateToken(role);
-          
+
           const res = await request(app)
             .post('/api/shipments')
             .set('Authorization', `Bearer ${token}`)
@@ -248,14 +256,14 @@ describe('RBAC Matrix Integration Tests', () => {
     // Test PATCH /api/shipments/:id (update)
     describe('PATCH /api/shipments/:id', () => {
       const shipmentId = new mongoose.Types.ObjectId().toString();
-      
+
       for (const role of ROLES) {
         const allowedRoles = RBAC_MATRIX['PATCH /api/shipments/:id'];
         const shouldAllow = allowedRoles.includes(role);
 
         it(`${role} ${shouldAllow ? 'should access' : 'should NOT access'} PATCH /api/shipments/:id`, async () => {
           const token = generateToken(role);
-          
+
           const res = await request(app)
             .patch(`/api/shipments/${shipmentId}`)
             .set('Authorization', `Bearer ${token}`)
@@ -278,7 +286,7 @@ describe('RBAC Matrix Integration Tests', () => {
 
         it(`${role} ${shouldAllow ? 'should access' : 'should NOT access'} GET /api/analytics`, async () => {
           const token = generateToken(role);
-          
+
           const res = await request(app)
             .get('/api/analytics')
             .set('Authorization', `Bearer ${token}`);
@@ -300,7 +308,7 @@ describe('RBAC Matrix Integration Tests', () => {
 
         it(`${role} ${shouldAllow ? 'should access' : 'should NOT access'} GET /api/anomalies`, async () => {
           const token = generateToken(role);
-          
+
           const res = await request(app)
             .get('/api/anomalies')
             .set('Authorization', `Bearer ${token}`);
@@ -317,14 +325,14 @@ describe('RBAC Matrix Integration Tests', () => {
     // Test PATCH /api/anomalies/:id (update anomaly)
     describe('PATCH /api/anomalies/:id', () => {
       const anomalyId = new mongoose.Types.ObjectId().toString();
-      
+
       for (const role of ROLES) {
         const allowedRoles = RBAC_MATRIX['PATCH /api/anomalies/:id'];
         const shouldAllow = allowedRoles.includes(role);
 
         it(`${role} ${shouldAllow ? 'should access' : 'should NOT access'} PATCH /api/anomalies/:id`, async () => {
           const token = generateToken(role);
-          
+
           const res = await request(app)
             .patch(`/api/anomalies/${anomalyId}`)
             .set('Authorization', `Bearer ${token}`)
@@ -347,7 +355,7 @@ describe('RBAC Matrix Integration Tests', () => {
 
         it(`${role} ${shouldAllow ? 'should access' : 'should NOT access'} GET /api/telemetry`, async () => {
           const token = generateToken(role);
-          
+
           const res = await request(app)
             .get('/api/telemetry')
             .set('Authorization', `Bearer ${token}`);
@@ -423,7 +431,7 @@ describe('RBAC Matrix Integration Tests', () => {
   describe('Viewer Role Restrictions', () => {
     it('VIEWER should NOT be able to create shipments', async () => {
       const token = generateToken(UserRole.VIEWER);
-      
+
       const res = await request(app)
         .post('/api/shipments')
         .set('Authorization', `Bearer ${token}`)
@@ -438,7 +446,7 @@ describe('RBAC Matrix Integration Tests', () => {
     it('VIEWER should NOT be able to update shipments', async () => {
       const token = generateToken(UserRole.VIEWER);
       const shipmentId = new mongoose.Types.ObjectId().toString();
-      
+
       const res = await request(app)
         .patch(`/api/shipments/${shipmentId}`)
         .set('Authorization', `Bearer ${token}`)
@@ -449,7 +457,7 @@ describe('RBAC Matrix Integration Tests', () => {
 
     it('VIEWER should NOT be able to create users', async () => {
       const token = generateToken(UserRole.VIEWER);
-      
+
       const res = await request(app)
         .post('/api/users')
         .set('Authorization', `Bearer ${token}`)
@@ -465,20 +473,16 @@ describe('RBAC Matrix Integration Tests', () => {
 
     it('VIEWER should be able to read shipments', async () => {
       const token = generateToken(UserRole.VIEWER);
-      
-      const res = await request(app)
-        .get('/api/shipments')
-        .set('Authorization', `Bearer ${token}`);
+
+      const res = await request(app).get('/api/shipments').set('Authorization', `Bearer ${token}`);
 
       expect([200, 404]).toContain(res.status);
     });
 
     it('VIEWER should be able to read anomalies', async () => {
       const token = generateToken(UserRole.VIEWER);
-      
-      const res = await request(app)
-        .get('/api/anomalies')
-        .set('Authorization', `Bearer ${token}`);
+
+      const res = await request(app).get('/api/anomalies').set('Authorization', `Bearer ${token}`);
 
       expect([200, 404]).toContain(res.status);
     });
@@ -487,17 +491,15 @@ describe('RBAC Matrix Integration Tests', () => {
   describe('Customer Role Restrictions', () => {
     it('CUSTOMER should NOT be able to access analytics', async () => {
       const token = generateToken(UserRole.CUSTOMER);
-      
-      const res = await request(app)
-        .get('/api/analytics')
-        .set('Authorization', `Bearer ${token}`);
+
+      const res = await request(app).get('/api/analytics').set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(403);
     });
 
     it('CUSTOMER should NOT be able to create shipments', async () => {
       const token = generateToken(UserRole.CUSTOMER);
-      
+
       const res = await request(app)
         .post('/api/shipments')
         .set('Authorization', `Bearer ${token}`)
@@ -511,10 +513,8 @@ describe('RBAC Matrix Integration Tests', () => {
 
     it('CUSTOMER should be able to read telemetry', async () => {
       const token = generateToken(UserRole.CUSTOMER);
-      
-      const res = await request(app)
-        .get('/api/telemetry')
-        .set('Authorization', `Bearer ${token}`);
+
+      const res = await request(app).get('/api/telemetry').set('Authorization', `Bearer ${token}`);
 
       expect([200, 404]).toContain(res.status);
     });
@@ -530,21 +530,16 @@ describe('RBAC Matrix Integration Tests', () => {
         ['GET', '/api/telemetry'],
       ];
 
-      for (const [method, path] of endpoints) {
+      for (const path of endpoints.map(([, endpointPath]) => endpointPath)) {
         const res = await request(app).get(path);
         expect(res.status).toBe(401);
       }
     });
 
     it('should reject requests with invalid token', async () => {
-      const res = await request(app)
-        .get('/api/users')
-        .set('Authorization', 'Bearer invalid-token');
+      const res = await request(app).get('/api/users').set('Authorization', 'Bearer invalid-token');
 
       expect(res.status).toBe(401);
     });
   });
 });
-
-// Import mongoose for ObjectId generation
-import mongoose from 'mongoose';

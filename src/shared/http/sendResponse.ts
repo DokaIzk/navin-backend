@@ -22,7 +22,7 @@ export function sendResponse(
   success: boolean,
   message: string,
   data: unknown,
-  meta?: ResponseMeta,
+  meta?: ResponseMeta
 ): void {
   const body: Record<string, unknown> = { success, message, data };
 

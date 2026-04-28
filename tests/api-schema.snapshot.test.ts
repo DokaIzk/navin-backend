@@ -17,7 +17,7 @@ await jest.unstable_mockModule('../src/modules/shipments/shipments.model.js', ()
     this.milestones = [];
   } as any;
 
-  ShipmentConstructor.find = (query = {}) => {
+  ShipmentConstructor.find = (query: any = {}) => {
     const cursor = query?._id?.$lt;
     const status = query?.status;
     const arr = shipmentsData
@@ -46,7 +46,7 @@ await jest.unstable_mockModule('../src/modules/shipments/shipments.model.js', ()
 
 await jest.unstable_mockModule('../src/modules/anomaly/anomaly.model.js', () => {
   const AnomalyConstructor = {
-    find: (query = {}) => {
+    find: (query: any = {}) => {
       const cursor = query?._id?.$lt;
       const shipmentId = query?.shipmentId;
       const severity = query?.severity;

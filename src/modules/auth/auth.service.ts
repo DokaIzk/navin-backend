@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { AppError } from '../../shared/http/errors.js';
 import { env } from '../../env.js';
-import { UserModel, UserRole } from '../users/users.model.js';
+import { UserModel } from '../users/users.model.js';
+import { UserRole } from '../../shared/types/user.js';
 import { blockToken } from '../../infra/redis/tokenBlocklist.js';
 import type { SignupInput, LoginInput } from './auth.validation.js';
 
