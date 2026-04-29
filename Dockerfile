@@ -1,19 +1,33 @@
-FROM node:20-alpine
+# ── Stage 1: production dependencies only ─────────────────────────────────────
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
 
+# ── Stage 2: build (TypeScript compilation) ───────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# ── Stage 3: production runner ────────────────────────────────────────────────
+FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install dependencies
-COPY package*.json ./
-RUN npm install
+COPY --from=deps    /app/node_modules ./node_modules
+COPY --from=builder /app/dist         ./dist
 
-# Copy source code
-COPY . .
+# swagger.yaml is resolved at runtime as dist/docs/swagger.yaml
+# (src/app.ts uses new URL('../docs/swagger.yaml', import.meta.url) from dist/src/app.js)
+COPY docs ./dist/docs
 
-# Expose the API port
+COPY package.json ./
+
 EXPOSE 3000
 
-# Native Docker healthcheck querying the health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-CMD ["npm", "start"]
+CMD ["node", "dist/src/main.js"]
