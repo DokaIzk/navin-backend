@@ -13,7 +13,7 @@ function getAllowedOrigins(): string[] {
     .filter(Boolean);
 }
 
-const corsOptionsDelegate: CorsOptionsDelegate<Request> = (req, callback) => {
+export const corsOptionsDelegate: CorsOptionsDelegate<Request> = (req, callback) => {
   const requestOrigin = req.header('Origin');
   const allowedOrigins = getAllowedOrigins();
 

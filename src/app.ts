@@ -29,6 +29,7 @@ export function buildApp() {
   app.use(helmet());
   // Enable weak ETags globally for client-side caching (Issue #80)
   app.set('etag', 'weak');
+
   app.use(requestId());
   app.use(corsMiddleware);
   app.options('*', corsPreflight);
