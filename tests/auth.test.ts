@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import type { Request, Response } from 'express';
 import { jest } from '@jest/globals';
 import { AppError } from '../src/shared/http/errors.js';
+import { OrganizationType } from '../src/modules/users/users.model.js';
 
 type UserDoc = {
   _id: { toString(): string };
@@ -13,11 +14,20 @@ type UserDoc = {
   passwordHash?: string;
 };
 
+type OrganizationDoc = {
+  _id: { toString(): string };
+  name: string;
+  type: OrganizationType;
+};
+
 type UserDocPartial = Partial<UserDoc>;
 
 const mockCreate = jest.fn() as jest.MockedFunction<(doc: Partial<UserDoc>) => Promise<UserDoc>>;
 const mockFindOne = jest.fn() as jest.MockedFunction<
   (query: Record<string, unknown>) => Promise<UserDocPartial | null>
+>;
+const mockOrgFindById = jest.fn() as jest.MockedFunction<
+  (id: string) => Promise<OrganizationDoc | null>
 >;
 
 jest.unstable_mockModule('../src/modules/users/users.model.js', () => ({
@@ -25,12 +35,12 @@ jest.unstable_mockModule('../src/modules/users/users.model.js', () => ({
     create: mockCreate,
     findOne: mockFindOne,
   },
-  UserRole: {
-    SUPER_ADMIN: 'SUPER_ADMIN',
-    ADMIN: 'ADMIN',
-    MANAGER: 'MANAGER',
-    VIEWER: 'VIEWER',
-    CUSTOMER: 'CUSTOMER',
+  OrganizationModel: {
+    findById: mockOrgFindById,
+  },
+  OrganizationType: {
+    ENTERPRISE: 'ENTERPRISE',
+    LOGISTICS: 'LOGISTICS',
   },
 }));
 
@@ -42,12 +52,14 @@ type TokenPayload = {
   userId: string;
   role: string;
   organizationId?: string;
+  organizationType?: OrganizationType;
 };
 
 describe('Auth Service', () => {
   beforeEach(() => {
     mockCreate.mockReset();
     mockFindOne.mockReset();
+    mockOrgFindById.mockReset();
   });
 
   describe('signup', () => {
@@ -114,6 +126,60 @@ describe('Auth Service', () => {
 
       expect(result).toHaveProperty('token');
       expect(result.user.email).toBe('test@example.com');
+    });
+
+    it('should include organizationType in token when user has organization', async () => {
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      const mockUser: UserDoc = {
+        _id: { toString: () => 'user-id-123' },
+        email: 'test@example.com',
+        name: 'Test User',
+        role: 'user',
+        organizationId: { toString: () => 'org-id-123' },
+        passwordHash: hashedPassword,
+      };
+
+      const mockOrg: OrganizationDoc = {
+        _id: { toString: () => 'org-id-123' },
+        name: 'Test Logistics',
+        type: OrganizationType.LOGISTICS,
+      };
+
+      mockFindOne.mockResolvedValue(mockUser);
+      mockOrgFindById.mockResolvedValue(mockOrg);
+
+      const result = await login({
+        email: 'test@example.com',
+        password: 'password123',
+      });
+
+      const decoded = jwt.verify(result.token, env.JWT_SECRET) as TokenPayload;
+      expect(decoded.organizationType).toBe(OrganizationType.LOGISTICS);
+      expect(decoded.organizationId).toBe('org-id-123');
+    });
+
+    it('should handle missing organization gracefully', async () => {
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      const mockUser: UserDoc = {
+        _id: { toString: () => 'user-id-123' },
+        email: 'test@example.com',
+        name: 'Test User',
+        role: 'user',
+        organizationId: { toString: () => 'org-id-123' },
+        passwordHash: hashedPassword,
+      };
+
+      mockFindOne.mockResolvedValue(mockUser);
+      mockOrgFindById.mockResolvedValue(null);
+
+      const result = await login({
+        email: 'test@example.com',
+        password: 'password123',
+      });
+
+      const decoded = jwt.verify(result.token, env.JWT_SECRET) as TokenPayload;
+      expect(decoded.organizationType).toBeUndefined();
+      expect(decoded.organizationId).toBe('org-id-123');
     });
 
     it('should throw error for invalid credentials (bad password)', async () => {

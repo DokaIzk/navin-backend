@@ -3,16 +3,14 @@ import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { AppError } from '../../shared/http/errors.js';
 import { env } from '../../env.js';
-import { UserModel } from '../users/users.model.js';
-import { UserRole } from '../../shared/types/user.js';
-import { blockToken } from '../../infra/redis/tokenBlocklist.js';
+import { UserModel, OrganizationModel, type OrganizationType } from '../users/users.model.js';
 import type { SignupInput, LoginInput } from './auth.validation.js';
 
 export interface TokenPayload {
   userId: string;
   role: string;
   organizationId?: string;
-  jti: string;
+  organizationType?: OrganizationType;
 }
 
 const TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
@@ -38,10 +36,17 @@ export async function signup(input: SignupInput) {
     organizationId: input.organizationId,
   });
 
+  let organizationType: OrganizationType | undefined;
+  if (user.organizationId) {
+    const organization = await OrganizationModel.findById(user.organizationId);
+    organizationType = organization?.type;
+  }
+
   const token = generateToken({
     userId: user._id.toString(),
     role: user.role as string,
     organizationId: user.organizationId?.toString(),
+    organizationType,
   });
 
   return {
@@ -66,10 +71,17 @@ export async function login(input: LoginInput) {
     throw new AppError(401, 'Invalid credentials', 'INVALID_CREDENTIALS');
   }
 
+  let organizationType: OrganizationType | undefined;
+  if (user.organizationId) {
+    const organization = await OrganizationModel.findById(user.organizationId);
+    organizationType = organization?.type;
+  }
+
   const token = generateToken({
     userId: user._id.toString(),
     role: user.role as string,
     organizationId: user.organizationId?.toString(),
+    organizationType,
   });
 
   return {
