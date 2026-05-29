@@ -116,6 +116,7 @@ describe('Real-time Socket.io Events', () => {
     await jest.unstable_mockModule('../src/services/stellar.service.js', () => ({
       tokenizeShipment: jest.fn(),
       anchorTelemetryHash: mockAnchorTelemetryHash,
+      releaseEscrow: jest.fn(),
     }));
 
     await jest.unstable_mockModule('../src/modules/auth/apiKey.service.js', () => ({

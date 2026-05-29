@@ -19,7 +19,6 @@ import {
   ShipmentIdParamSchema,
   ShipmentPatchBodySchema,
   ShipmentProofBodySchema,
-  ShipmentsQuerySchema,
   ShipmentStatusBodySchema,
 } from './shipments.validation.js';
 

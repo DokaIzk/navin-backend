@@ -96,3 +96,47 @@ export async function anchorTelemetryHash(telemetryData: {
 
   return { stellarTxHash: txHash };
 }
+export async function releaseEscrow(escrowData: {
+  paymentId: string;
+  shipmentId: string;
+}): Promise<{ success: boolean; transactionHash?: string }> {
+  try {
+    const secretKey = config.stellarSecretKey;
+    if (!secretKey) {
+      throw new Error('STELLAR_SECRET_KEY is not configured');
+    }
+
+    const keypair = Keypair.fromSecret(secretKey);
+    const account = await horizon.loadAccount(keypair.publicKey());
+
+    const network = config.stellarNetwork === 'public' ? Networks.PUBLIC : Networks.TESTNET;
+
+    // Build a transaction to release the escrow by recording the release event on-chain
+    const transaction = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: network,
+    })
+      .addOperation(
+        Operation.manageData({
+          name: `release:${escrowData.paymentId}`,
+          value: escrowData.shipmentId,
+        })
+      )
+      .addMemo(Memo.text(`escrow-release:${escrowData.paymentId}`))
+      .setTimeout(30)
+      .build();
+
+    transaction.sign(keypair);
+
+    const result = await horizon.submitTransaction(transaction);
+    const txHash = result.hash;
+
+    return {
+      success: true,
+      transactionHash: txHash,
+    };
+  } catch (error) {
+    console.error('[Stellar] Error releasing escrow:', error);
+    return { success: false };
+  }
+}

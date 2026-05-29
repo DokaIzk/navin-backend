@@ -84,7 +84,10 @@ await jest.unstable_mockModule('../src/modules/users/users.model.js', () => {
     },
     findById: (id: string) => Promise.resolve(usersData.find(u => String(u._id) === String(id)) || null),
   };
-  return { UserModel };
+  const OrganizationModel = {
+    findById: () => Promise.resolve(null),
+  };
+  return { UserModel, OrganizationModel };
 });
 
 await jest.unstable_mockModule('../src/infra/socket/io.js', () => ({

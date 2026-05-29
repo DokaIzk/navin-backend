@@ -1,6 +1,12 @@
 import { UserModel } from './users.model.js';
 
-export async function createUser(input: { email: string; name: string }) {
+export async function createUser(input: {
+  email: string;
+  name: string;
+  passwordHash?: string;
+  role?: string;
+  organizationId?: string;
+}) {
   return UserModel.create(input);
 }
 

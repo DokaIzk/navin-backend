@@ -5,17 +5,40 @@ import jwt from 'jsonwebtoken';
 import { env } from '../../env.js';
 import { UserRole } from '../../shared/constants/index.js';
 
-export async function registerUser(input: { email: string; name: string }) {
+export async function registerUser(input: { email: string; name: string; role?: string }) {
   const existing = await findUserByEmail(input.email);
   if (existing) throw new AppError(409, 'Email already in use', 'EMAIL_TAKEN');
   return createUser(input);
+}
+
+export async function createTeamMember(input: {
+  email: string;
+  name: string;
+  role?: string;
+  callerOrganizationId: string;
+}) {
+  const existing = await findUserByEmail(input.email);
+  if (existing) throw new AppError(409, 'Email already in use', 'EMAIL_TAKEN');
+
+  // Force override organizationId from caller's JWT context
+  return createUser({
+    email: input.email,
+    name: input.name,
+    passwordHash: '', // Will be set later via invitation flow or direct password
+    role: input.role || UserRole.VIEWER,
+    organizationId: input.callerOrganizationId, // Override with caller's org
+  });
 }
 
 export async function listOrganizationUsers(input: {
   organizationId?: string;
   role?: string;
 }) {
-  const allowedRoles = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MANAGER];
+  const allowedRoles = [
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+  ];
 
   if (!input.role || !allowedRoles.includes(input.role as UserRole)) {
     throw new AppError(403, 'Forbidden: insufficient role', 'FORBIDDEN');

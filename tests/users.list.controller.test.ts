@@ -5,7 +5,9 @@ import type { Application } from 'express';
 
 describe('GET /api/users', () => {
   let app: Application;
-  const findUsersByOrganizationId = jest.fn();
+  const findUsersByOrganizationId = jest.fn<
+    (organizationId: string) => Promise<Array<{ _id: string; email: string; organizationId: string; role: string }>>
+  >();
 
   beforeEach(async () => {
     jest.resetModules();

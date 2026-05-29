@@ -1,10 +1,10 @@
 import { jest, describe, it, beforeAll, expect } from '@jest/globals';
 import type { Express } from 'express';
 
-const findByIdAndUpdateMock = jest.fn();
-const anomalyUpdateManyMock = jest.fn();
-const telemetryUpdateManyMock = jest.fn();
-const mockUploadToStorageMock = jest.fn();
+const findByIdAndUpdateMock = jest.fn<(id: unknown, update: unknown, opts?: unknown) => Promise<unknown>>();
+const anomalyUpdateManyMock = jest.fn<(query: unknown, update: unknown) => Promise<unknown>>();
+const telemetryUpdateManyMock = jest.fn<(query: unknown, update: unknown) => Promise<unknown>>();
+const mockUploadToStorageMock = jest.fn<(file: unknown) => Promise<string>>();
 
 await jest.unstable_mockModule('../src/modules/shipments/shipments.model.js', () => ({
   Shipment: {

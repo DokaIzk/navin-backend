@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import { AppError } from '../../shared/http/errors.js';
 import { env } from '../../env.js';
-import { UserModel, OrganizationModel, type OrganizationType } from '../users/users.model.js';
+import { UserModel, OrganizationModel, type OrganizationType, UserRole } from '../users/users.model.js';
+import { blockToken } from '../../infra/redis/tokenBlocklist.js';
 import type { SignupInput, LoginInput } from './auth.validation.js';
 
 export interface TokenPayload {
@@ -11,6 +12,7 @@ export interface TokenPayload {
   role: string;
   organizationId?: string;
   organizationType?: OrganizationType;
+  jti: string;
 }
 
 const TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days

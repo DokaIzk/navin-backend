@@ -5,6 +5,8 @@ import { asyncHandler } from '../../shared/http/asyncHandler.js';
 import { requireApiKey } from '../../shared/middleware/requireApiKey.js';
 import { IotWebhookBodySchema } from './iot.validation.js';
 import { iotWebhookController } from './iot.controller.js';
+import { StellarWebhookPayloadSchema } from './stellar.webhook.validation.js';
+import { handleStellarWebhookController } from './stellar.webhook.controller.js';
 
 export const webhooksRouter = Router();
 
@@ -14,4 +16,11 @@ webhooksRouter.post(
   asyncHandler(requireApiKey),
   validateRequest({ body: IotWebhookBodySchema }),
   asyncHandler(iotWebhookController)
+);
+
+webhooksRouter.post(
+  '/stellar',
+  express.json({ limit: '1mb' }),
+  validateRequest({ body: StellarWebhookPayloadSchema }),
+  asyncHandler(handleStellarWebhookController),
 );

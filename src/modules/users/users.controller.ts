@@ -7,6 +7,16 @@ export const createUserController: RequestHandler = async (req, res) => {
   sendResponse(res, 201, true, 'User registered successfully', user);
 };
 
+export const createTeamMemberController: RequestHandler = async (req, res) => {
+  const user = await usersService.createTeamMember({
+    email: req.body.email,
+    name: req.body.name,
+    role: req.body.role,
+    callerOrganizationId: req.user?.organizationId ?? '',
+  });
+  sendResponse(res, 201, true, 'Team member created successfully', user);
+};
+
 export const deleteUserController: RequestHandler = async (req, res) => {
   await usersService.deleteUser(req.params.id);
   res.json({ success: true, message: 'User deleted successfully' });
@@ -37,6 +47,8 @@ export const acceptInvitationController: RequestHandler = async (req, res) => {
   });
 
   sendResponse(res, 201, true, 'Invitation accepted successfully', user);
+};
+
 export const listUsersController: RequestHandler = async (req, res) => {
   const users = await usersService.listOrganizationUsers({
     organizationId: req.user?.organizationId,

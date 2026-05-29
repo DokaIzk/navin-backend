@@ -161,6 +161,9 @@ describe('RBAC Matrix Integration Tests', () => {
         CUSTOMER: 'CUSTOMER',
       },
       OrganizationType: {},
+      OrganizationModel: {
+        findById: jest.fn(),
+      },
     }));
 
     await jest.unstable_mockModule('../src/modules/shipments/shipments.model.js', () => ({

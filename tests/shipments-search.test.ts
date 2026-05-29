@@ -67,7 +67,8 @@ await jest.unstable_mockModule('../src/modules/shipments/shipments.model.js', ()
 
 // Mock other dependencies
 await jest.unstable_mockModule('../src/services/stellar.service.js', () => ({
-  tokenizeShipment: jest.fn(() => Promise.resolve({ stellarTokenId: 'test', stellarTxHash: 'test' }))
+  tokenizeShipment: jest.fn(() => Promise.resolve({ stellarTokenId: 'test', stellarTxHash: 'test' })),
+  releaseEscrow: jest.fn(() => Promise.resolve({ success: true, transactionHash: 'test' }))
 }));
 
 await jest.unstable_mockModule('../src/infra/socket/io.js', () => ({

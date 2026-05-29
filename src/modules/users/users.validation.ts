@@ -4,6 +4,7 @@ import { UserRole } from '../../shared/constants/index.js';
 export const CreateUserBodySchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
+  role: z.nativeEnum(UserRole).default(UserRole.VIEWER),
 });
 
 export const CreateInvitationBodySchema = z.object({

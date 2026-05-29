@@ -69,29 +69,28 @@ export const patchShipmentStatus = async (req: Request, res: Response) => {
 };
 
 export const uploadShipmentProof = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { recipientSignatureName, notes } = req.body as {
-    recipientSignatureName?: string;
-    notes?: string;
-  };
-  const file = req.file;
+  try {
+    const { id } = req.params;
+    const { recipientSignatureName, notes } = req.body as {
+      recipientSignatureName?: string;
+      notes?: string;
+    };
+    const file = req.file;
 
-  if (!file) {
-    sendResponse(res, 400, false, 'No file uploaded', null);
-    return;
-  }
+    if (!file) {
+      sendResponse(res, 400, false, 'No file uploaded', null);
+      return;
+    }
 
-  const shipment = await uploadShipmentProofService(id, file, {
-    recipientSignatureName,
-    notes,
-  });
+    const shipment = await uploadShipmentProofService(id, file, {
+      recipientSignatureName,
+      notes,
+    });
 
     sendResponse(res, 200, true, 'Proof uploaded', shipment);
   } catch {
     sendResponse(res, 500, false, 'Server error', null);
   }
-
-  sendResponse(res, 200, true, 'Proof uploaded', shipment);
 };
 
 export const deleteShipment = async (req: Request, res: Response) => {

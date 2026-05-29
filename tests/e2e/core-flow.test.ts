@@ -69,6 +69,9 @@ describe('E2E: Shipment Lifecycle (Hash and Emit Pipeline)', () => {
       anchorTelemetryHash: jest.fn(() =>
         Promise.resolve({ stellarTxHash: 'anchor-tx-hash-e2e' })
       ),
+      releaseEscrow: jest.fn(() =>
+        Promise.resolve({ success: true, transactionHash: 'release-tx-hash-e2e' })
+      ),
     }));
 
     await jest.unstable_mockModule('../../src/modules/auth/apiKey.service.js', () => ({

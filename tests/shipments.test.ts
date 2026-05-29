@@ -138,7 +138,10 @@ await jest.unstable_mockModule('../src/modules/users/users.model.js', () => {
     ENTERPRISE: 'ENTERPRISE',
     LOGISTICS: 'LOGISTICS',
   };
-  return { UserModel, UserRole, OrganizationType };
+  const OrganizationModel = {
+    findById: () => Promise.resolve(null),
+  };
+  return { UserModel, UserRole, OrganizationType, OrganizationModel };
 });
 
 await jest.unstable_mockModule('../src/infra/socket/io.js', () => {

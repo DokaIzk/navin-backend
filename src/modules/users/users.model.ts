@@ -63,6 +63,7 @@ UserSchema.pre('aggregate', function () {
 });
 
 export const OrganizationModel = mongoose.model<IOrganization>('Organization', OrganizationSchema);
+export { OrganizationType };
 
 export const UserModel = mongoose.model<IUser>('User', UserSchema);
 export { UserRole };
